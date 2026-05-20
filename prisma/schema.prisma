@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Client {
+  id             String   @id @default(cuid())
+  name           String
+  phoneWhatsapp  String   @unique
+  createdAt      DateTime @default(now())
+
+  orders         Order[]
+}
+
+model ShoppingDay {
+  id           String   @id @default(cuid())
+  date         DateTime @default(now())
+  status       String   @default("open") // open | closed
+  totalCost    Float?
+  totalRevenue Float?
+  createdAt    DateTime @default(now())
+
+  orders            Order[]
+  shoppingListItems ShoppingListItem[]
+  invoices          Invoice[]
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  rawMessages   String[] // mensagens brutas do WhatsApp
+  status        String   @default("pending") // pending | invoiced
+  createdAt     DateTime @default(now())
+
+  client        Client      @relation(fields: [clientId], references: [id])
+  clientId      String
+
+  shoppingDay   ShoppingDay @relation(fields: [shoppingDayId], references: [id])
+  shoppingDayId String
+
+  orderItems    OrderItem[]
+  invoice       Invoice?
+}
+
+model OrderItem {
+  id          String @id @default(cuid())
+  productName String
+  quantity    Float
+  unit        String // caixa | saco | maço | kg | unidade | pé
+  rawText     String // trecho original da mensagem
+
+  order       Order  @relation(fields: [orderId], references: [id])
+  orderId     String
+}
+
+model ShoppingListItem {
+  id             String  @id @default(cuid())
+  productName    String
+  canonicalUnit  String
+  totalQuantity  Float
+  costPrice      Float?  // preenchido no centro de distribuição
+  salePrice      Float?  // calculado: costPrice + margem
+  profitMarginPct Float? // % de margem definida pelo distribuidor
+
+  shoppingDay    ShoppingDay @relation(fields: [shoppingDayId], references: [id])
+  shoppingDayId  String
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  totalAmount   Float
+  sentAt        DateTime?
+  waMessageId   String?
+  itemsSnapshot Json     // snapshot dos itens na hora do faturamento
+  createdAt     DateTime @default(now())
+
+  order         Order       @relation(fields: [orderId], references: [id])
+  orderId       String      @unique
+
+  shoppingDay   ShoppingDay @relation(fields: [shoppingDayId], references: [id])
+  shoppingDayId String
+}
