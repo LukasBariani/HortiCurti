@@ -1,14 +1,21 @@
 import express from 'express';
+import { errorHandler } from './middlewares/errorHandler';
+import clientRoutes from './routes/client.routes';
+import shoppingDayRoutes from './routes/shoppingDay.routes';
+import orderRoutes from './routes/order.routes';
 
 const app = express();
 
-//receber json no bodydas req
 app.use(express.json());
 
-
 app.get('/health', (req, res) => {
-    res.json({status: 'ok', message: 'HortiCurti back fumando'});
+  res.json({ status: 'ok', message: 'Hortifrutti backend rodando!' });
 });
 
-export default app;
+app.use('/clients', clientRoutes);
+app.use('/shopping-days', shoppingDayRoutes);
+app.use('/orders', orderRoutes);
 
+app.use(errorHandler);
+
+export default app;
